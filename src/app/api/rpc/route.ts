@@ -29,8 +29,10 @@ export async function POST(request: Request) {
       const filter = (c.params?.[0] ?? {}) as { fromBlock?: string; toBlock?: string };
       const from = filter.fromBlock?.startsWith("0x") ? Number(BigInt(filter.fromBlock)) : null;
       const to = filter.toBlock?.startsWith("0x") ? Number(BigInt(filter.toBlock)) : null;
-      if (from === null) return NextResponse.json({ error: "eth_getLogs needs a numeric fromBlock." }, { status: 400 });
-      if (to !== null && to - from > MAX_LOG_SPAN) return NextResponse.json({ error: "Log range too wide." }, { status: 400 });
+      // A missing or tag toBlock ("latest", "pending") means the chain head, so the span cannot be
+      // checked without it: require both ends as numbers.
+      if (from === null || to === null) return NextResponse.json({ error: "eth_getLogs needs a numeric fromBlock and toBlock." }, { status: 400 });
+      if (to - from > MAX_LOG_SPAN) return NextResponse.json({ error: "Log range too wide." }, { status: 400 });
     }
   }
   try {
